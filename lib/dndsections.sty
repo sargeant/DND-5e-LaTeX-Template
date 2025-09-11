@@ -242,6 +242,7 @@
   {
     \DndItemHeader {#1} {#2}
 
+    {\sffamily
     \begin{description}
       [
         nosep,
@@ -249,12 +250,14 @@
         itemindent = 0pt,
         labelsep = \l__dnd_space_dim,
         after    = { \vspace{4pt plus 1pt minus 1pt} },
+        font     = \bfseries\sffamily,
       ]
       \item [ \spellcastingtimename : ] #3
       \item [ \spellrangename       : ] #4
       \item [ \spellcomponentsname  : ] #5
       \item [ \spelldurationname    : ] #6
     \end{description}
+    }
   }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

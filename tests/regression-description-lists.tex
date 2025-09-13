@@ -1,0 +1,45 @@
+% Minimal regression test for description list alignment across environments
+\documentclass[a4paper,10pt]{dndbook}
+
+\begin{document}
+
+\chapter*{Regression: Description Lists}
+
+Body text with a description list:
+\begin{description}
+  \item[Harbinger.] Example text for body list alignment.
+  \item[Malice.] Example text to check label width and wrap.
+\end{description}
+
+\begin{DndSidebar}{Sidebar}
+Inside sidebar:
+\begin{description}
+  \item[Note.] Example text inside sidebar list for alignment.
+\end{description}
+\end{DndSidebar}
+
+\begin{DndComment}{Comment}
+Inside comment:
+\begin{description}
+  \item[Note.] Example text inside comment list for alignment.
+\end{description}
+\end{DndComment}
+
+% Spell header uses an internal description list with explicit margins
+\DndSpellHeader{Test Spell}{1st-level illusion}{1 action}{60 feet}{V, S}{Concentration, up to 1 minute}
+
+\par\vspace{6pt}
+Spell body text follows to check relative alignment with metadata.
+
+\par\vspace{12pt}
+% Monster stat block with a description list inside
+\begin{DndMonster}{Sample Creature}
+\DndMonsterType{Medium humanoid, unaligned}
+\DndMonsterLine
+\begin{description}
+  \item[Traits.] Example trait text to verify description list alignment in stat blocks.
+\end{description}
+\end{DndMonster}
+
+\end{document}
+

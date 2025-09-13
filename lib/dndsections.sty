@@ -203,7 +203,10 @@
     {\parskip}   % before-sep
     {\wordsep}   % after-sep
 
-  \setlist[description]{nolistsep,listparindent=0pt,itemindent=0pt,leftmargin=2pt,labelsep=1em,topsep=6pt}
+  % Global description list settings: keep default left margin,
+  % and use a small paragraph indent for body consistency.
+  % This mirrors upstream/main behavior that renders correctly.
+  \setlist[description]{nolistsep,listparindent=3pt,topsep=6pt}
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -502,4 +505,3 @@
 }
 
 \ExplSyntaxOn % New interface
-

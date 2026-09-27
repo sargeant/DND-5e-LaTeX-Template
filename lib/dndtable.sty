@@ -137,8 +137,8 @@
 \NewDocumentEnvironment{dndlongtable}{O{>{\centering}p{0.2\linewidth} p{0.7\linewidth}} O{tablecolor}}{%
   % End horizontal mode. Pad the top of the table with some vertical space.
   \par\vspace*{8pt}
-  % Disable indentation on the next line.
-  \noindent
+  % Stay in vertical mode: supertabular starts its own unindented line, and in
+  % horizontal mode sets a stray space before the table.
   % Set the sans-serif table body font.
   \DndFontTableBody
   % Set alternating row colours.

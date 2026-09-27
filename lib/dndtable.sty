@@ -159,14 +159,18 @@
 
 %%%%%%%%%%%%% START "DndLongTable" CODE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % A DndTable that breaks across columns and pages, repeating its column labels
-% after each break. Columns can't stretch (X) in a supertabular, so P{fraction}
-% and C{fraction} give a column that fraction of the line width.
-\newcolumntype {P} [1] { p { \dimexpr #1 \linewidth - 2 \tabcolsep \relax } }
-\newcolumntype {C} [1] { > { \centering \arraybackslash } P {#1} }
+% after each break. It takes DndTable's column specification: the body is
+% first set in a hidden tabularx to find each column's width, then in a
+% supertabular with those widths, so each part of the table is as wide as the
+% whole. l, c and r columns keep their natural width; X and Y columns share
+% the rest.
 
-% A column type with its prefix and one argument, such as >{\bfseries}P{0.2}
+% A column with its prefix and one argument, such as >{\bfseries}X or p{2cm}
 \regex_const:Nn \c__dnd_longtable_column_regex
   { (?: > \s* \{ [^{}]* \} \s* )? [^\s{}] (?: \s* \{ [^{}]* \} )? }
+% A column split into its prefix and its type
+\regex_const:Nn \c__dnd_longtable_prefix_regex
+  { \A ( (?: > \s* \{ [^{}]* \} \s* )? ) (.*) \Z }
 
 \keys_define:nn { dnd / longtable }
   {
@@ -175,6 +179,103 @@
     color .value_required:n  = true,
     header .tl_set:N         = \l__dnd_longtable_header_tl,
     header .value_required:n = true,
+    width .dim_set:N         = \l__dnd_longtable_width_dim,
+    width .value_required:n  = true,
+  }
+
+\seq_new:N \l__dnd_longtable_columns_seq
+\tl_new:N \l__dnd_longtable_measure_tl
+\tl_new:N \l__dnd_longtable_spec_tl
+\box_new:N \l__dnd_longtable_cell_box
+\box_new:N \l__dnd_longtable_table_box
+
+\cs_new_protected:Npn \__dnd_longtable_width:n #1
+  { g__dnd_longtable_column_ \int_to_arabic:n {#1} _dim }
+
+% Measuring an l, c or r cell: its natural width, the widest so far
+\cs_new_protected:Npn \__dnd_longtable_cell_begin:
+  { \hbox_set:Nw \l__dnd_longtable_cell_box }
+\cs_new_protected:Npn \__dnd_longtable_cell_end:n #1
+  {
+    \hbox_set_end:
+    \dim_gset:cn { \__dnd_longtable_width:n {#1} }
+      {
+        \dim_max:nn
+          { \dim_use:c { \__dnd_longtable_width:n {#1} } }
+          { \box_wd:N \l__dnd_longtable_cell_box }
+      }
+    \box_use_drop:N \l__dnd_longtable_cell_box
+  }
+% Measuring an X or Y cell: the width tabularx gave it
+\cs_new_protected:Npn \__dnd_longtable_stretch:n #1
+  { \dim_gset:cn { \__dnd_longtable_width:n {#1} } { \hsize } }
+
+% Build the measuring and final specifications from the columns
+\cs_new_protected:Npn \__dnd_longtable_specs:n #1
+  {
+    \regex_extract_all:NnN \c__dnd_longtable_column_regex {#1}
+      \l__dnd_longtable_columns_seq
+    \tl_clear:N \l__dnd_longtable_measure_tl
+    \tl_clear:N \l__dnd_longtable_spec_tl
+    \seq_map_indexed_inline:Nn \l__dnd_longtable_columns_seq
+      {
+        \dim_if_exist:cF { \__dnd_longtable_width:n {##1} }
+          { \dim_new:c { \__dnd_longtable_width:n {##1} } }
+        \dim_gzero:c { \__dnd_longtable_width:n {##1} }
+        \regex_extract_once:NnN \c__dnd_longtable_prefix_regex {##2} \l_tmpa_seq
+        \tl_set:Nx \l_tmpa_tl { \seq_item:Nn \l_tmpa_seq { 2 } }
+        \tl_set:Nx \l_tmpb_tl { \seq_item:Nn \l_tmpa_seq { 3 } }
+        \tl_put_right:Nn \l__dnd_longtable_measure_tl { ^ }
+        \tl_put_right:Nn \l__dnd_longtable_spec_tl { ^ }
+        \str_case_e:nnF { \tl_to_str:N \l_tmpb_tl }
+          {
+            { l } { \__dnd_longtable_fixed:nnn {##1} { l } { \raggedright } }
+            { c } { \__dnd_longtable_fixed:nnn {##1} { c } { \centering } }
+            { r } { \__dnd_longtable_fixed:nnn {##1} { r } { \raggedleft } }
+            { X } { \__dnd_longtable_stretch:nn {##1} { } }
+            { Y } { \__dnd_longtable_stretch:nn {##1} { \centering } }
+          }
+          {
+            % Any other column keeps its own width
+            \tl_put_right:Nx \l__dnd_longtable_measure_tl { \exp_not:n {##2} }
+            \tl_put_right:Nx \l__dnd_longtable_spec_tl { \exp_not:n {##2} }
+          }
+      }
+    % The first ^ is DndTable's ` column, which resets the row style
+    \tl_set:Nx \l__dnd_longtable_measure_tl
+      { ` \tl_tail:N \l__dnd_longtable_measure_tl }
+    \tl_set:Nx \l__dnd_longtable_spec_tl
+      { ` \tl_tail:N \l__dnd_longtable_spec_tl }
+  }
+% Column #1, of alignment #2: measured as it is, then that wide and no wider
+\cs_new_protected:Npn \__dnd_longtable_fixed:nnn #1 #2 #3
+  {
+    \tl_put_right:Nx \l__dnd_longtable_measure_tl
+      {
+        \exp_not:V \l_tmpa_tl
+        > { \exp_not:N \__dnd_longtable_cell_begin: } #2
+        < { \exp_not:N \__dnd_longtable_cell_end:n {#1} }
+      }
+    \tl_put_right:Nx \l__dnd_longtable_spec_tl
+      {
+        \exp_not:V \l_tmpa_tl
+        w {#2} { \exp_not:N \dim_use:c { \__dnd_longtable_width:n {#1} } }
+      }
+  }
+% Column #1, stretched: measured as tabularx sets it, then a paragraph that wide
+\cs_new_protected:Npn \__dnd_longtable_stretch:nn #1 #2
+  {
+    \tl_put_right:Nx \l__dnd_longtable_measure_tl
+      {
+        \exp_not:V \l_tmpa_tl
+        > { \exp_not:N \__dnd_longtable_stretch:n {#1} \exp_not:n {#2} } X
+      }
+    \tl_put_right:Nx \l__dnd_longtable_spec_tl
+      {
+        \exp_not:V \l_tmpa_tl
+        > { \exp_not:n { #2 \arraybackslash } }
+        p { \exp_not:N \dim_use:c { \__dnd_longtable_width:n {#1} } }
+      }
   }
 
 % The next row is row 1 and has no colour. colortbl picks a row's colour at
@@ -189,10 +290,11 @@
       }
   }
 
-% DndLongTable [color, header] {column spec} {column labels}
-\NewDocumentEnvironment {DndLongTable} { o m m }
+% DndLongTable [color, header, width] {column spec} {column labels}
+\NewDocumentEnvironment {DndLongTable} { o m m +b }
   {
     \group_begin:
+    \dim_set:Nn \l__dnd_longtable_width_dim { \linewidth }
     \tl_if_novalue:nF {#1}
       { \keys_set:nn { dnd / longtable } {#1} }
 
@@ -207,10 +309,23 @@
       }
 
     \DndFontTableBody
+    \__dnd_longtable_specs:n {#2}
+
+    % Set the whole table once, unseen, to measure its columns
+    \hbox_set:Nn \l__dnd_longtable_table_box
+      {
+        % tabularx finds its body by its own \end, as DndLongTable's is gone
+        \use:x
+          {
+            \exp_not:N \begin {tabularx} { \dim_use:N \l__dnd_longtable_width_dim }
+              { \exp_not:V \l__dnd_longtable_measure_tl }
+          }
+        \tl_if_blank:nF {#3} { \rowstyle { \DndFontTableHeader } #3 \\ }
+        #4
+        \end {tabularx}
+      }
 
     % Each row resets the row style, which the labels set, as in DndTable
-    \regex_extract_all:NnN \c__dnd_longtable_column_regex {#2} \l_tmpa_seq
-    \tl_set:Nx \l_tmpa_tl { \seq_use:Nn \l_tmpa_seq {^} }
     \tl_if_blank:nTF {#3}
       { \tablehead { \__dnd_longtable_restart_rows: } }
       {
@@ -220,10 +335,18 @@
     \tabletail {}
     \tablelasttail {}
     \rowcolors {1} {} { \l__dnd_longtable_color_tl }
-    \use:x { \exp_not:N \begin {supertabular} { ` \exp_not:V \l_tmpa_tl } }
+    % In vertical mode: supertabular sets a stray space in horizontal mode,
+    % and starts its own line
+    \par
+    \use:x
+      {
+        \exp_not:N \begin {supertabular}
+          { \exp_not:V \l__dnd_longtable_spec_tl }
+      }
+    #4
+    \end {supertabular}
   }
   {
-    \end {supertabular}
     \vspace { 9pt plus 3pt minus 3pt }
     \group_end:
   }

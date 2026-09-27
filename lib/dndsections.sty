@@ -203,10 +203,7 @@
     {\parskip}   % before-sep
     {\wordsep}   % after-sep
 
-  % Global description list settings: keep default left margin,
-  % and use a small paragraph indent for body consistency.
-  % This mirrors upstream/main behavior that renders correctly.
-  \setlist[description]{nolistsep,listparindent=3pt,topsep=6pt}
+  \setlist[description]{nolistsep,listparindent=6pt,itemindent=-6pt,leftmargin=12pt,labelsep=0.5em,topsep=6pt}
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -286,7 +283,7 @@
     area-num-depth .choice:,
     area-num-depth .choices:nn =
       { 1, 2, 3, 4 }
-      { \tl_set:Nn \l__dnd_area_num_depth_tl {\l_keys_choice_tl} },
+      { \tl_set:Nn \l__dnd_area_num_depth_tl {#1} },
     area-num-depth .initial:n  = 2, % subsection
   }
 
@@ -294,6 +291,9 @@
   {
     \keys_set:nn { dnd / areas } { #1 }
   }
+% .initial:n inside \keys_define:nn runs inside a group, so the local tl_set
+% is discarded. Explicitly initialize here at package level (no active group).
+\tl_set:Nn \l__dnd_area_num_depth_tl { 2 }
 
 % Counters
 \newcounter {DndMapCounter}
@@ -499,7 +499,7 @@
 \NewDocumentCommand\DndQuote{ m m m }{
   \textsc{#1}
   {\small\textit{#2}}
-  \par
+  \par\vspace{3pt}
   \IfValueT{#3}{%
   \IfStrEq{#3}{}{}{\hfill\small\textemdash#3\par\vspace{6pt}}}
 }

@@ -186,6 +186,7 @@
 \seq_new:N \l__dnd_longtable_columns_seq
 \tl_new:N \l__dnd_longtable_measure_tl
 \tl_new:N \l__dnd_longtable_spec_tl
+\tl_new:N \l__dnd_longtable_body_tl
 \box_new:N \l__dnd_longtable_cell_box
 \box_new:N \l__dnd_longtable_table_box
 
@@ -298,18 +299,14 @@
     \tl_if_novalue:nF {#1}
       { \keys_set:nn { dnd / longtable } {#1} }
 
-    \par \vspace { 9pt plus 3pt minus 3pt } \noindent
-
-    \tl_if_empty:NF \l__dnd_longtable_header_tl
-      {
-        \group_begin:
-          \DndFontTableTitle \l__dnd_longtable_header_tl \nopagebreak
-          \par \vspace{ 5pt plus 2pt minus 2pt } \noindent
-        \group_end:
-      }
+    \par \vspace { 9pt plus 3pt minus 3pt }
 
     \DndFontTableBody
     \__dnd_longtable_specs:n {#2}
+    % Without the last row's \\, where supertabular would check for room and
+    % could start a new column holding only the labels
+    \tl_set:Nn \l__dnd_longtable_body_tl {#4}
+    \regex_replace_once:nnN { \c{\\} \s* \Z } { } \l__dnd_longtable_body_tl
 
     % Set the whole table once, unseen, to measure its columns
     \hbox_set:Nn \l__dnd_longtable_table_box
@@ -326,12 +323,34 @@
       }
 
     % Each row resets the row style, which the labels set, as in DndTable
-    \tl_if_blank:nTF {#3}
-      { \tablehead { \__dnd_longtable_restart_rows: } }
+    \tl_set:Nn \l_tmpb_tl { \__dnd_longtable_restart_rows: }
+    \tl_if_blank:nF {#3}
+      { \tl_put_right:Nn \l_tmpb_tl { \rowstyle { \DndFontTableHeader } #3 \\ } }
+    \exp_args:NV \tablehead \l_tmpb_tl
+    % The title is the first head's first row, so no break comes between it
+    % and the table
+    \tl_if_empty:NF \l__dnd_longtable_header_tl
       {
-        \tablehead
-          { \__dnd_longtable_restart_rows: \rowstyle { \DndFontTableHeader } #3 \\ }
+        \tl_put_left:Nx \l_tmpb_tl
+          {
+            \exp_not:N \__dnd_longtable_restart_rows:
+            \exp_not:N \multicolumn
+              { \seq_count:N \l__dnd_longtable_columns_seq }
+              {
+                @{}
+                > { \exp_not:N \raggedright \exp_not:N \arraybackslash }
+                p { \dim_use:N \l__dnd_longtable_width_dim }
+                @{}
+              }
+              {
+                \exp_not:N \DndFontTableTitle
+                \exp_not:V \l__dnd_longtable_header_tl
+              }
+            \exp_not:N \\
+            \exp_not:N \noalign { \exp_not:N \vskip 5pt plus 2pt minus 2pt }
+          }
       }
+    \exp_args:NV \tablefirsthead \l_tmpb_tl
     \tabletail {}
     \tablelasttail {}
     \rowcolors {1} {} { \l__dnd_longtable_color_tl }
@@ -343,7 +362,7 @@
         \exp_not:N \begin {supertabular}
           { \exp_not:V \l__dnd_longtable_spec_tl }
       }
-    #4
+    \l__dnd_longtable_body_tl
     \end {supertabular}
   }
   {

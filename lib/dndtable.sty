@@ -157,6 +157,78 @@
 \makeatother
 %%%%%%%%%%%%% END "dndlongtable" CODE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%%%%%%%%% START "DndLongTable" CODE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% A DndTable that breaks across columns and pages, repeating its column labels
+% after each break. Columns can't stretch (X) in a supertabular, so P{fraction}
+% and C{fraction} give a column that fraction of the line width.
+\newcolumntype {P} [1] { p { \dimexpr #1 \linewidth - 2 \tabcolsep \relax } }
+\newcolumntype {C} [1] { > { \centering \arraybackslash } P {#1} }
+
+% A column type with its prefix and one argument, such as >{\bfseries}P{0.2}
+\regex_const:Nn \c__dnd_longtable_column_regex
+  { (?: > \s* \{ [^{}]* \} \s* )? [^\s{}] (?: \s* \{ [^{}]* \} )? }
+
+\keys_define:nn { dnd / longtable }
+  {
+    color .tl_set:N          = \l__dnd_longtable_color_tl,
+    color .initial:n         = tablecolor,
+    color .value_required:n  = true,
+    header .tl_set:N         = \l__dnd_longtable_header_tl,
+    header .value_required:n = true,
+  }
+
+% The next row is row 1 and has no colour. colortbl picks a row's colour at
+% the end of the row before, so after a break the new column's first row would
+% otherwise take its colour from the count before the break.
+\cs_new:Npn \__dnd_longtable_restart_rows:
+  {
+    \noalign
+      {
+        \int_gset:Nn \rownum { 1 }
+        \cs_gset_eq:cN { CT@row@color } \relax
+      }
+  }
+
+% DndLongTable [color, header] {column spec} {column labels}
+\NewDocumentEnvironment {DndLongTable} { o m m }
+  {
+    \group_begin:
+    \tl_if_novalue:nF {#1}
+      { \keys_set:nn { dnd / longtable } {#1} }
+
+    \par \vspace { 9pt plus 3pt minus 3pt } \noindent
+
+    \tl_if_empty:NF \l__dnd_longtable_header_tl
+      {
+        \group_begin:
+          \DndFontTableTitle \l__dnd_longtable_header_tl \nopagebreak
+          \par \vspace{ 5pt plus 2pt minus 2pt } \noindent
+        \group_end:
+      }
+
+    \DndFontTableBody
+
+    % Each row resets the row style, which the labels set, as in DndTable
+    \regex_extract_all:NnN \c__dnd_longtable_column_regex {#2} \l_tmpa_seq
+    \tl_set:Nx \l_tmpa_tl { \seq_use:Nn \l_tmpa_seq {^} }
+    \tl_if_blank:nTF {#3}
+      { \tablehead { \__dnd_longtable_restart_rows: } }
+      {
+        \tablehead
+          { \__dnd_longtable_restart_rows: \rowstyle { \DndFontTableHeader } #3 \\ }
+      }
+    \tabletail {}
+    \tablelasttail {}
+    \rowcolors {1} {} { \l__dnd_longtable_color_tl }
+    \use:x { \exp_not:N \begin {supertabular} { ` \exp_not:V \l_tmpa_tl } }
+  }
+  {
+    \end {supertabular}
+    \vspace { 9pt plus 3pt minus 3pt }
+    \group_end:
+  }
+%%%%%%%%%%%%% END "DndLongTable" CODE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %%%%%%%%%%%%% START "ornamented table" CODE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Code from Loop Space: <https://tex.stackexchange.com/a/26386/73317>
 \ExplSyntaxOff

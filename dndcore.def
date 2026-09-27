@@ -29,7 +29,7 @@
 
 \RequirePackage {xparse} % \NewDocumentCommand and expl3
 \RequirePackage {makecell}
-\RequirePackage {xtab}
+\RequirePackage {supertabular}
 
 \RequirePackage {keycommand}
 \RequirePackage {everypage}

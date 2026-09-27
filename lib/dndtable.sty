@@ -143,11 +143,11 @@
   \DndFontTableBody
   % Set alternating row colours.
   \rowcolors{1}{#2}{}
-  % Create an `xtabular*` table as wide as the current line (column) and pass
+  % Create a `supertabular*` table as wide as the current line (column) and pass
   % the column spec to it (#1).
-  \begin{xtabular*}{\linewidth}{#1}
+  \begin{supertabular*}{\linewidth}{#1}
 }{%
-  \end{xtabular*}
+  \end{supertabular*}
   % Pad the bottom of the table with some vertical space.
   \vspace{8pt plus 1pt}
   % Disable indentation on the next line.

@@ -419,6 +419,33 @@ Yields a three-column table:
     100 & You win a magic item or an expensive piece of classic artwork. & 1000 gp \\
 \end{dndlongtable}
 
+|DndLongTable| takes the same |header| and |color| options as |DndTable| and
+the column labels as a separate argument, which it repeats at the top of each
+column and page the table continues on. Columns can't stretch like |X| columns,
+so |P{0.8}| is a column 0.8 of the line width and |C{0.2}| the same, centred:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+\begin{DndLongTable}[header=Treasure]{C{0.2}P{0.8}}{d12 & Item}
+  1 & Potion of healing \\
+  ...
+\end{DndLongTable}
+\end{lstlisting}
+
+\begin{DndLongTable}[header=Treasure]{C{0.2}P{0.8}}{d12 & Item}
+    1 & Potion of healing \\
+    2 & Spell scroll (cantrip) \\
+    3 & Potion of climbing \\
+    4 & Spell scroll (1st level) \\
+    5 & Spell scroll (2nd level) \\
+    6 & Potion of greater healing \\
+    7 & Bag of holding \\
+    8 & Driftglobe \\
+    9 & Potion of healing \\
+    10 & Spell scroll (cantrip) \\
+    11 & Potion of climbing \\
+    12 & Spell scroll (1st level) \\
+\end{DndLongTable}
+
 \newcolumn
 \section{Tables with Footnotes}
 Surrounding one of the existing table types with a |minipage| section

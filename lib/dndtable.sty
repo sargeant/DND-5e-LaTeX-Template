@@ -186,6 +186,7 @@
 \seq_new:N \l__dnd_longtable_columns_seq
 \tl_new:N \l__dnd_longtable_measure_tl
 \tl_new:N \l__dnd_longtable_spec_tl
+\tl_new:N \l__dnd_longtable_body_tl
 \box_new:N \l__dnd_longtable_cell_box
 \box_new:N \l__dnd_longtable_table_box
 
@@ -302,6 +303,10 @@
 
     \DndFontTableBody
     \__dnd_longtable_specs:n {#2}
+    % Without the last row's \\, where supertabular would check for room and
+    % could start a new column holding only the labels
+    \tl_set:Nn \l__dnd_longtable_body_tl {#4}
+    \regex_replace_once:nnN { \c{\\} \s* \Z } { } \l__dnd_longtable_body_tl
 
     % Set the whole table once, unseen, to measure its columns
     \hbox_set:Nn \l__dnd_longtable_table_box
@@ -357,7 +362,7 @@
         \exp_not:N \begin {supertabular}
           { \exp_not:V \l__dnd_longtable_spec_tl }
       }
-    #4
+    \l__dnd_longtable_body_tl
     \end {supertabular}
   }
   {
